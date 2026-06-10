@@ -1,0 +1,223 @@
+module one_sec(clk, clk_sec);
+    input clk;
+    output clk_sec;
+    reg clk_sec;
+    reg [25:0] counter;
+    initial
+    begin
+        clk_sec <= 0;
+        counter <= 0;
+    end
+    always @(posedge clk)
+    begin
+        if (counter == 0)
+        begin
+            counter <= 25000000; //counter <= 200 (for teset bench)
+            clk_sec <= ~clk_sec;
+        end
+        else
+        begin
+            counter <= counter - 1;
+        end
+    end
+endmodule
+module clock_sec(clk_sec, reset, start, A, sub_10s);
+    input clk_sec, reset, start;
+    output [3:0] A;
+    output sub_10s;
+    reg sub_10s;
+    reg [3:0] A;
+    
+    always @(posedge clk_sec or negedge reset) begin
+        if(!reset)
+        begin
+            sub_10s <= 0;
+            A <= 0;
+        end
+        else
+        begin
+            if(start == 1)
+            begin
+                A <= A;
+            end
+            else
+            begin
+                if (A == 0)
+                begin
+                    sub_10s <= 1;
+                    A <= 9;
+                end
+                else
+                begin
+                    A <= A - 1;
+                    sub_10s <= 0;
+                end
+            end
+        end
+    end
+endmodule
+module clock_10sec(sub_10s, reset, B, sub_1m);
+    input sub_10s, reset;
+    output [3:0] B;
+    output sub_1m;
+    reg sub_1m;
+    reg [3:0] B;
+    always @(posedge sub_10s or negedge reset) begin
+        if(!reset)
+        begin
+            B <= 0;
+            sub_1m <= 0;
+        end
+        else
+        begin
+            if(B == 0)
+            begin
+                sub_1m <= 1;
+                B <= 5;
+            end
+            else
+            begin
+                if(sub_10s == 1)
+                begin
+                    B <= B - 1;
+                    sub_1m <= 0;
+                end
+            end
+        end
+    end
+endmodule
+module clock_1min(sub_1m, reset, add_10m, C, sub_10m);
+    input sub_1m, reset, add_10m;
+    output [3:0] C;
+    output sub_10m;
+    reg sub_10m;
+    reg [3:0] C;
+    
+    always @(posedge sub_1m or negedge reset) begin
+        if(!reset)
+        begin
+            C <= 0;
+            sub_10m <= 0;
+        end
+        else
+        begin
+            if(add_10m == 1) //if you want to set the timer as 10minutes, the switch must 
+be up and down by the controller.
+            begin
+                C <= 9;
+            end
+            else
+            begin
+                if(C == 0)
+                begin
+                    sub_10m <= 1;
+                    C <= 9;
+                end
+                else
+                begin
+                    if(sub_1m == 1)
+                    begin
+                        C <= C - 1;
+                        sub_10m <= 0;
+                    end
+                end
+            end
+        end
+    end
+endmodule
+module clock_10min(sub_10m, reset, D, sub_1h);
+    input sub_10m, reset;
+    output [3:0] D;
+    output sub_1h;
+    reg sub_1h;
+    reg [3:0] D;
+    
+    always @(posedge sub_10m or negedge reset) begin
+        if(!reset)
+        begin
+            D <= 0;
+            sub_1h <= 0;
+        end
+        else
+        begin
+            if(D == 0)
+            begin
+                sub_1h <= 1;
+                D <= 5;
+            end
+            else
+            begin
+                if(sub_10m == 1)
+                begin
+                    D <= D - 1;
+                    sub_1h <= 0;
+                end
+            end
+        end
+    end
+endmodule
+module Timer(clk, clk_sec, reset, start, add_10m, A, B, C, D, seg1, seg2, seg3, seg4);
+    input clk, reset, start, add_10m;
+    one_sec oc(clk, clk_sec);
+    output clk_sec;
+    output [3:0] A, B, C, D;
+    output [6:0] seg1, seg2, seg3, seg4;
+    reg [6:0] seg1, seg2, seg3, seg4;
+    always@(A)
+    begin
+        case(A)
+            4'b0000: seg1 = 7'b1000000;
+            4'b0001: seg1 = 7'b1111001;
+            4'b0010: seg1 = 7'b0100100;
+            4'b0011: seg1 = 7'b0110000;
+            4'b0100: seg1 = 7'b0011001;
+            4'b0101: seg1 = 7'b0010010;
+            4'b0110: seg1 = 7'b0000010;
+            4'b0111: seg1 = 7'b1011000;
+            4'b1000: seg1 = 7'b0000000;
+            4'b1001: seg1 = 7'b0010000;
+        endcase
+    end
+    always@(B)
+    begin
+        case(B)
+            4'b0000: seg2 = 7'b1000000;
+            4'b0001: seg2 = 7'b1111001;
+            4'b0010: seg2 = 7'b0100100;
+            4'b0011: seg2 = 7'b0110000;
+            4'b0100: seg2 = 7'b0011001;
+            4'b0101: seg2 = 7'b0010010;
+        endcase
+    end
+    always@(C)
+    begin
+        case(C)
+            4'b0000: seg3 = 7'b1000000;
+            4'b0001: seg3 = 7'b1111001;
+            4'b0010: seg3 = 7'b0100100;
+            4'b0011: seg3 = 7'b0110000;
+            4'b0100: seg3 = 7'b0011001;
+            4'b0101: seg3 = 7'b0010010;
+            4'b0110: seg3 = 7'b0000010;
+            4'b0111: seg3 = 7'b1011000;
+            4'b1000: seg3 = 7'b0000000;
+            4'b1001: seg3 = 7'b0010000;
+        endcase
+    end
+    always@(D)
+    begin
+        case(D)
+4'b0000: seg4 = 7'b1000000;
+4'b0001: seg4 = 7'b1111001;
+4'b0010: seg4 = 7'b0100100;
+4'b0011: seg4 = 7'b0110000;
+4'b0100: seg4 = 7'b0011001;
+4'b0101: seg4 = 7'b0010010;
+endcase
+end
+wire sub_10s, sub_1m, sub_10m;
+clock_sec a1(clk_sec, reset, start, A, sub_10s);
+clock_10sec a2(sub_10s, reset, B, sub_1m);
+clock_1min a3(sub_1m, reset, add_10m, C, sub_10m);
+clock_10min a4(sub_10m, reset, D);
+endmodule
